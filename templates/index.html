@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2 class="text-center mb-4" style="font-family: 'Roboto', sans-serif; color: #0275d8; font-weight: bold; font-size: 28px;">遊戯王カードリスト</h2>
+
+<!-- フィルターフォーム（中央寄せ）-->
+<form method="get" class="filter-form mb-4">
+    <div class="row justify-content-center">
+        <div class="col-sm-3">
+            <label>表示件数:</label>
+            <select name="per_page" class="form-select" onchange="this.form.submit()" style="font-size: 16px; font-weight: bold;">
+                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <label>
+                <input type="checkbox" name="show_zero" onchange="this.form.submit()" {% if show_zero %}checked{% endif %} style="font-size: 16px; font-weight: bold;">
+                在庫数0を表示
+            </label>
+        </div>
+        <div class="col-sm-3">
+            <input type="text" name="keyword" value="{{ keyword }}" class="form-control" placeholder="検索キーワード" style="font-size: 16px; font-weight: bold;">
+            <button type="submit" class="btn btn-primary mt-2" style="font-size: 16px; font-weight: bold;">検索</button>
+        </div>
+    </div>
+
+    <br>ソート:
+    <div class="row justify-content-center">
+        <div class="col-sm-3">
+            <select name="sort_by" class="form-select" style="font-size: 16px; font-weight: bold;">
+                <option value="name" {% if sort_by == 'name' %}selected{% endif %}>名前</option>
+                <option value="card_id" {% if sort_by == 'card_id' %}selected{% endif %}>カードID</option>
+                <option value="stock" {% if sort_by == 'stock' %}selected{% endif %}>在庫数</option>
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="sort_order" class="form-select" style="font-size: 16px; font-weight: bold;">
+                <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>昇順</option>
+                <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>降順</option>
+            </select>
+            <button type="submit" class="btn btn-secondary mt-2" style="font-size: 16px; font-weight: bold;">ソート</button>
+        </div>
+    </div>
+</form>
+
+<!-- テーブル -->
+<table class="table table-bordered table-striped" style="background-color: #f8f9fa; border-radius: 8px;">
+    <thead class="thead-light">
+        <tr>
+            <th class="text-center" style="width: 25%; font-size: 16px; font-weight: bold;">名前</th>
+            <th class="text-center" style="width: 25%; font-size: 16px; font-weight: bold;">カードID</th>
+            <th class="text-center" style="width: 25%; font-size: 16px; font-weight: bold;">レア</th>
+            <th class="text-center" style="width: 15%; font-size: 16px; font-weight: bold;">在庫数</th>
+            {% if logged_in %}<th class="text-center" style="width: 10%; font-size: 16px; font-weight: bold;">操作</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr class="item-row" style="border-bottom: 1px solid #ddd; background-color: #fff; font-size: 16px;">
+            <td class="text-center" style="padding: 15px; font-family: 'Roboto', sans-serif; font-weight: bold;">
+                {{ item.name or '（名前なし）' }}
+            </td>
+            <td class="text-center" style="padding: 15px; font-family: 'Roboto', sans-serif; font-weight: bold;">{{ item.card_id or '（IDなし）' }}</td>
+            <td class="text-center" style="padding: 15px; font-family: 'Roboto', sans-serif; font-weight: bold;">{{ item.rare or '（レア不明）' }}</td>
+            <td class="text-center" style="padding: 15px; font-family: 'Roboto', sans-serif; font-weight: bold;">{{ item.stock }}</td>
+            {% if logged_in %}
+            <td class="text-center">
+                <a href="{{ url_for('edit', filename=item.filename) }}" class="btn btn-info btn-sm" style="font-weight: bold;">編集</a>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 改良されたページネーション -->
+{% if total_pages > 1 %}
+<div class="pagination justify-content-center">
+    <!-- 前のページボタン -->
+    <a href="?per_page={{ per_page }}&page={{ page - 1 if page > 1 else 1 }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}" class="btn btn-outline-secondary {% if page == 1 %}disabled{% endif %}">前</a>
+
+    <!-- ページ番号 -->
+    {% for p in range(page_range_start, page_range_end) %}
+        {% if p == page %}
+            <strong class="active btn btn-primary btn-sm">{{ p }}</strong>
+        {% else %}
+            <a href="?per_page={{ per_page }}&page={{ p }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}" class="btn btn-outline-primary btn-sm">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+
+    <!-- 次のページボタン -->
+    <a href="?per_page={{ per_page }}&page={{ page + 1 if page < total_pages else total_pages }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}" class="btn btn-outline-secondary {% if page == total_pages %}disabled{% endif %}">次</a>
+</div>
+{% endif %}
+
+{% endblock %}

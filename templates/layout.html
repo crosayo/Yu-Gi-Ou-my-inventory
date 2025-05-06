@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在庫管理ツール</title>
+    <!-- BootstrapのCSS追加 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEJxn+4l8mP2p/0Ppud8p+h0WgDqpxEOX4DdV6H2JmOB4oU5qEak2TIm+F2QF" crossorigin="anonymous">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        /* 中央寄せのフォームデザイン */
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .filter-form .col-sm-4 {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        /* テーブルの中央寄せ */
+        .table {
+            width: 100%;
+            margin: 0 auto;
+        }
+        .table td, .table th {
+            text-align: center;
+        }
+
+        /* ページネーション */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .pagination a, .pagination strong {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            text-decoration: none;
+            color: blue;
+            font-weight: bold;
+        }
+        .pagination a:hover {
+            background-color: #ddd;
+        }
+        .pagination .disabled {
+            pointer-events: none;
+            color: #ccc;
+        }
+        .pagination .active {
+            background-color: #0275d8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if logged_in %}
+            <p><a href="{{ url_for('logout') }}">ログアウト</a></p>
+        {% else %}
+            <p><a href="{{ url_for('login') }}">ログイン</a></p>
+        {% endif %}
+        <hr>
+
+        {% block content %}
+        <h2 class="text-center">在庫一覧</h2>
+
+        <!-- フィルター部分を中央配置 -->
+        <form method="get" class="filter-form mb-4">
+            <div class="col-sm-4">
+                表示件数:
+                <select name="per_page" class="form-select" onchange="this.form.submit()">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <label>
+                    <input type="checkbox" name="show_zero" onchange="this.form.submit()" {% if show_zero %}checked{% endif %}>
+                    在庫数0を表示
+                </label>
+            </div>
+            <div class="col-sm-4">
+                <input type="text" name="keyword" value="{{ keyword }}" class="form-control" placeholder="検索キーワード">
+                <button type="submit" class="btn btn-primary mt-2">検索</button>
+            </div>
+        </form>
+
+        <!-- ソート部分を中央配置 -->
+        <div class="row mb-4 justify-content-center">
+            <div class="col-sm-6">
+                <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>名前</option>
+                    <option value="card_id" {% if sort_by == 'card_id' %}selected{% endif %}>カードID</option>
+                    <option value="stock" {% if sort_by == 'stock' %}selected{% endif %}>在庫数</option>
+                </select>
+            </div>
+            <div class="col-sm-6">
+                <select name="sort_order" class="form-select" onchange="this.form.submit()">
+                    <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>昇順</option>
+                    <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>降順</option>
+                </select>
+            </div>
+        </div>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>名前</th><th>カードID</th><th>レア</th><th>在庫数</th>
+                    {% if logged_in %}<th>操作</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name or '（名前なし）' }}</td>
+                    <td>{{ item.card_id or '（IDなし）' }}</td>
+                    <td>{{ item.rare or '（レア不明）' }}</td>
+                    <td>{{ item.stock }}</td>
+                    {% if logged_in %}
+                    <td><a href="{{ url_for('edit', filename=item.filename) }}">編集</a></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 改良されたページネーション -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            <!-- 前のページボタン -->
+            <a href="?per_page={{ per_page }}&page={{ page - 1 if page > 1 else 1 }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}" class="{% if page == 1 %}disabled{% endif %}">前</a>
+
+            <!-- ページ番号の表示（省略なし） -->
+            {% for p in range(max(1, page - 2), min(page + 3, total_pages + 1)) %}
+                {% if p == page %}
+                    <strong class="active">{{ p }}</strong>
+                {% else %}
+                    <a href="?per_page={{ per_page }}&page={{ p }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            <!-- 次のページボタン -->
+            <a href="?per_page={{ per_page }}&page={{ page + 1 if page < total_pages else total_pages }}&show_zero={{ 'on' if show_zero else '' }}&keyword={{ keyword }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}" class="{% if page == total_pages %}disabled{% endif %}">次</a>
+        </div>
+        {% endif %}
+        {% endblock %}
+    </div>
+
+    <!-- BootstrapのJS追加 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-GLhlTQ8iRZl6J80Lqq4fplZk9v6t5R3kl5JhSg24nS5PaRujr3LQK19q3bQmt4Va" crossorigin="anonymous"></script>
+</body>
+</html>
