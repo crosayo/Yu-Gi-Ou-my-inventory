@@ -21,11 +21,11 @@ td, th {
         </tr>
         {% for item in items %}
         <tr>
-            <td><input type="text" name="name_{{ loop.index0 }}" value="{{ item.name }}"></td>
-            <td><input type="text" name="card_id_{{ loop.index0 }}" value="{{ item.card_id }}"></td>
-            <td><input type="text" name="rare_{{ loop.index0 }}" value="{{ item.rare }}"></td>
-            <td><input type="number" name="stock_{{ loop.index0 }}" value="{{ item.stock }}" min="0"></td>
-            <td><input type="checkbox" name="delete_{{ loop.index0 }}"> 削除</td>
+            <td><input type="text" name="name_{{ loop.index0 }}" value="{{ item['name'] }}"></td>
+            <td><input type="text" name="card_id_{{ loop.index0 }}" value="{{ item['card_id'] }}"></td>
+            <td><input type="text" name="rare_{{ loop.index0 }}" value="{{ item['rare'] }}"></td>
+            <td><input type="number" name="stock_{{ loop.index0 }}" value="{{ item['stock'] }}" min="0"></td>
+             <td><input type="checkbox" name="delete_{{ loop.index0 }}"> 削除</td>
         </tr>
         {% endfor %}
     </table>

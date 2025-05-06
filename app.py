@@ -36,9 +36,14 @@ def load_all_items():
             with open(path, newline='', encoding='utf-8-sig') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    row['name'] = row['name'].lstrip('\ufeff')
+                    row['name'] = row.get('name', '').lstrip('\ufeff').strip()
                     row['filename'] = filename
-                    row['stock'] = int(row.get('stock', 0))
+                    row['card_id'] = row.get('card_id', '').strip()
+                    row['rare'] = row.get('rare', '').strip()
+                    try:
+                        row['stock'] = int(row.get('stock', 0))
+                    except ValueError:
+                        row['stock'] = 0
                     items.append(row)
     return items
 
@@ -50,7 +55,7 @@ def save_items_to_file(filename, items):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for item in items:
-            writer.writerow({k: item[k] for k in fieldnames})
+            writer.writerow({k: item.get(k, '') for k in fieldnames})
 
 # トップページ
 @app.route('/')
@@ -81,7 +86,6 @@ def index():
     end = start + per_page
     items = all_items[start:end]
 
-    # ページ番号の範囲を計算
     page_range_start = max(1, page - 2)
     page_range_end = min(page + 3, (total + per_page - 1) // per_page + 1)
 
@@ -99,7 +103,6 @@ def index():
         page_range_start=page_range_start,
         page_range_end=page_range_end
     )
-
 
 # ログイン
 @app.route('/login', methods=['GET', 'POST'])
@@ -133,7 +136,7 @@ def edit(filename):
         total = int(request.form.get('total_rows', 0))
         for i in range(total):
             if request.form.get(f'delete_{i}'):
-                continue  # 削除チェックされた行はスキップ
+                continue
 
             name = request.form.get(f'name_{i}', '').strip()
             card_id = request.form.get(f'card_id_{i}', '').strip()
@@ -155,30 +158,42 @@ def edit(filename):
                     'stock': stock
                 })
 
-        # 新規行の追加（入力があれば）
-        if request.form.get('add_name') and request.form.get('add_card_id'):
+        # 新規商品追加
+        add_name = request.form.get('add_name', '').strip()
+        add_card_id = request.form.get('add_card_id', '').strip()
+        add_rare = request.form.get('add_rare', '').strip()
+        add_stock = request.form.get('add_stock', '0').strip()
+
+        if add_name and add_card_id:
             try:
-                stock = int(request.form.get('add_stock', 0))
+                stock = int(add_stock)
                 if stock < 0:
                     stock = 0
             except ValueError:
                 stock = 0
             items.append({
-                'name': request.form['add_name'].strip(),
-                'card_id': request.form['add_card_id'].strip(),
-                'rare': request.form.get('add_rare', '').strip(),
+                'name': add_name,
+                'card_id': add_card_id,
+                'rare': add_rare,
                 'stock': stock
             })
 
         save_items_to_file(filename, items)
         return redirect(url_for('index'))
 
-    # 読み込み
+    # GET: 編集対象読み込み
     items = []
-    with open(path, newline='', encoding='utf-8') as csvfile:
+    with open(path, newline='', encoding='utf-8-sig') as csvfile:  # ✅ 修正箇所
         reader = csv.DictReader(csvfile)
         for row in reader:
-            row['stock'] = int(row.get('stock', 0))
+            # BOM対策
+            row['name'] = row.get('name') or row.get('\ufeffname', '')
+            row['card_id'] = row.get('card_id', '')
+            row['rare'] = row.get('rare', '')
+            try:
+                row['stock'] = int(row.get('stock', 0))
+            except ValueError:
+                row['stock'] = 0
             items.append(row)
 
     return render_template('edit.html', items=items, filename=filename)
