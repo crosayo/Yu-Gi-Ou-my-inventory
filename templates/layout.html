@@ -41,7 +41,7 @@
             <h1 class="h4 text-center">遊戯王カード在庫管理</h1>
             <div>
                 {% if logged_in %}
-                    <a href="{{ url_for('edit') }}" class="btn btn-outline-secondary me-2">編集</a>
+                    <a href="{{ url_for('add_item_page') }}" class="btn btn-outline-success me-2">新規登録</a>
                     <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">ログアウト</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="btn btn-outline-primary">ログイン</a>

@@ -52,6 +52,22 @@
     </div>
   </form>
 
+  <!-- 検索結果が0件だった場合の案内 -->
+  {% if items|length == 0 and keyword %}
+  <div class="alert alert-warning text-center">
+    「{{ keyword }}」に該当する商品は見つかりませんでした。<br>
+    <a href="{{ url_for('add_item_page') }}?name={{ keyword }}" class="btn btn-outline-success mt-2">この名前で新しく商品を登録</a>
+  </div>
+  {% endif %}
+
+  <!-- 類似商品あり + card_id不一致 → 新規追加案内 -->
+  {% if show_add_hint and keyword %}
+  <div class="alert alert-info text-center">
+    検索結果に「{{ keyword }}」というカードIDは存在しないようです。<br>
+    <a href="{{ url_for('add_item_page') }}?name={{ keyword }}" class="btn btn-outline-success mt-2">この型番で新しく商品を登録する</a>
+  </div>
+  {% endif %}
+
   <!-- 📦 カードリスト -->
   <table class="table table-striped table-hover">
     <thead>
@@ -71,9 +87,8 @@
         <td>{{ item.rare }}</td>
         <td>{{ item.stock }}</td>
         <td>
-          <a href="{{ url_for('edit', card_id=item.card_id) }}" class="btn btn-sm btn-primary">編集</a>
-          <a href="{{ url_for('delete', card_id=item.card_id) }}" class="btn btn-sm btn-danger"
-            onclick="return confirm('本当に削除しますか？');">削除</a>
+          <a href="{{ url_for('edit_item', card_id=item.card_id) }}" class="btn btn-sm btn-primary">編集</a>
+          <a href="{{ url_for('confirm_delete', card_id=item.card_id) }}" class="btn btn-sm btn-danger">削除</a>
         </td>
       </tr>
       {% endfor %}
@@ -110,5 +125,9 @@
     </ul>
   </nav>
 
+  <!-- 新規商品登録ボタン（全体でも表示） -->
+  <div class="text-center mt-4">
+    <a href="{{ url_for('add_item_page') }}" class="btn btn-outline-success">＋ 新規商品を登録</a>
+  </div>
 </div>
 {% endblock %}

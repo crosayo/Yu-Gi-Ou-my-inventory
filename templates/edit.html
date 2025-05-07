@@ -4,35 +4,41 @@
   <h2 class="text-center my-4 fw-bold">商品編集ページ</h2>
 
   <!-- 🔍 検索フォーム -->
-  <form method="get" class="mb-4">
-    <div class="input-group">
-      <input type="text" class="form-control" name="keyword" placeholder="商品名やカードIDで検索" value="{{ keyword }}">
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-12 col-md-8">
+      <input type="text"
+             class="form-control"
+             name="keyword"
+             placeholder="商品名やカードIDで検索"
+             value="{{ keyword }}">
+    </div>
+    <div class="col-12 col-md-4 d-grid">
       <button type="submit" class="btn btn-outline-primary">検索</button>
     </div>
   </form>
 
   <form method="post">
-
     <!-- 🔼 上部ボタン -->
     <div class="text-center mb-4">
       <button type="submit" class="btn btn-success me-2">保存</button>
       <a href="{{ url_for('index') }}" class="btn btn-secondary">戻る</a>
     </div>
 
-    <!-- 🔼 新規追加 -->
+    <!-- 🔼 新規追加（必要な方は別途専用ページへ） -->
+    <!-- ↓ ここを削除して完全に分離してもOK -->
     <div class="mb-4">
       <h4 class="fw-bold mb-3">新しい商品を追加</h4>
       <div class="row g-2">
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="text" class="form-control" name="add_name" placeholder="名前">
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="text" class="form-control" name="add_card_id" placeholder="カードID">
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="text" class="form-control" name="add_rare" placeholder="レアリティ">
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="number" class="form-control" name="add_stock" placeholder="在庫数" min="0">
         </div>
       </div>
@@ -53,12 +59,42 @@
         <tbody>
           {% for item in items %}
           <tr>
-            <td><input type="text" class="form-control" name="name_{{ loop.index0 }}" value="{{ item['name'] }}"></td>
-            <td><input type="text" class="form-control" name="card_id_{{ loop.index0 }}" value="{{ item['card_id'] }}"></td>
-            <td><input type="text" class="form-control" name="rare_{{ loop.index0 }}" value="{{ item['rare'] }}"></td>
-            <td><input type="number" class="form-control" name="stock_{{ loop.index0 }}" value="{{ item['stock'] }}" min="0"></td>
+            <td>
+              <input type="text"
+                     class="form-control"
+                     name="name_{{ loop.index0 }}"
+                     value="{{ item.name }}">
+            </td>
+            <td>
+              <input type="text"
+                     class="form-control"
+                     name="card_id_{{ loop.index0 }}"
+                     value="{{ item.card_id }}">
+            </td>
+            <td>
+              <input type="text"
+                     class="form-control"
+                     name="rare_{{ loop.index0 }}"
+                     value="{{ item.rare }}">
+            </td>
+            <td>
+              <input type="number"
+                     class="form-control"
+                     name="stock_{{ loop.index0 }}"
+                     value="{{ item.stock }}"
+                     min="0">
+            </td>
             <td class="text-center">
-              <input type="checkbox" name="delete_{{ loop.index0 }}"> 削除
+              <div class="form-check form-switch d-flex justify-content-center">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="delete_{{ loop.index0 }}"
+                       id="delete_{{ loop.index0 }}">
+                <label class="form-check-label visually-hidden"
+                       for="delete_{{ loop.index0 }}">
+                  削除
+                </label>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -80,20 +116,21 @@
 <button onclick="scrollToTop()" id="topBtn" title="ページトップへ">↑</button>
 
 <style>
+  /* トップボタン */
   #topBtn {
     position: fixed;
     bottom: 30px;
     right: 20px;
     z-index: 100;
     background-color: #0d6efd;
-    color: white;
+    color: #fff;
     border: none;
     padding: 10px 15px;
     border-radius: 50%;
     font-size: 18px;
     cursor: pointer;
     display: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
   #topBtn:hover {
     background-color: #0b5ed7;
@@ -101,8 +138,9 @@
 </style>
 
 <script>
-  window.onscroll = function () {
-    document.getElementById("topBtn").style.display = window.scrollY > 300 ? "block" : "none";
+  window.onscroll = function() {
+    document.getElementById("topBtn").style.display =
+      window.scrollY > 300 ? "block" : "none";
   };
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
