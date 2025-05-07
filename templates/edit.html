@@ -1,46 +1,111 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2 class="text-center my-4" style="font-family: 'Roboto', sans-serif; font-weight: bold;">商品編集ページ</h2>
+<div class="container">
+  <h2 class="text-center my-4 fw-bold">商品編集ページ</h2>
 
-<form method="post">
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-            <thead class="table-light">
-                <tr>
-                    <th class="text-center">名前</th>
-                    <th class="text-center">カードID</th>
-                    <th class="text-center">レアリティ</th>
-                    <th class="text-center">在庫</th>
-                    <th class="text-center">削除</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td><input type="text" class="form-control" name="name_{{ loop.index0 }}" value="{{ item['name'] }}"></td>
-                    <td><input type="text" class="form-control" name="card_id_{{ loop.index0 }}" value="{{ item['card_id'] }}"></td>
-                    <td><input type="text" class="form-control" name="rare_{{ loop.index0 }}" value="{{ item['rare'] }}"></td>
-                    <td><input type="number" class="form-control" name="stock_{{ loop.index0 }}" value="{{ item['stock'] }}" min="0"></td>
-                    <td class="text-center"><input type="checkbox" name="delete_{{ loop.index0 }}"> 削除</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <!-- 🔍 検索フォーム -->
+  <form method="get" class="mb-4">
+    <div class="input-group">
+      <input type="text" class="form-control" name="keyword" placeholder="商品名やカードIDで検索" value="{{ keyword }}">
+      <button type="submit" class="btn btn-outline-primary">検索</button>
+    </div>
+  </form>
+
+  <form method="post">
+
+    <!-- 🔼 上部ボタン -->
+    <div class="text-center mb-4">
+      <button type="submit" class="btn btn-success me-2">保存</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">戻る</a>
+    </div>
+
+    <!-- 🔼 新規追加 -->
+    <div class="mb-4">
+      <h4 class="fw-bold mb-3">新しい商品を追加</h4>
+      <div class="row g-2">
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="add_name" placeholder="名前">
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="add_card_id" placeholder="カードID">
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="add_rare" placeholder="レアリティ">
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" name="add_stock" placeholder="在庫数" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- 編集テーブル -->
+    <div class="table-responsive mb-4">
+      <table class="table table-bordered table-striped align-middle">
+        <thead class="table-light text-center">
+          <tr>
+            <th>名前</th>
+            <th>カードID</th>
+            <th>レアリティ</th>
+            <th>在庫</th>
+            <th>削除</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td><input type="text" class="form-control" name="name_{{ loop.index0 }}" value="{{ item['name'] }}"></td>
+            <td><input type="text" class="form-control" name="card_id_{{ loop.index0 }}" value="{{ item['card_id'] }}"></td>
+            <td><input type="text" class="form-control" name="rare_{{ loop.index0 }}" value="{{ item['rare'] }}"></td>
+            <td><input type="number" class="form-control" name="stock_{{ loop.index0 }}" value="{{ item['stock'] }}" min="0"></td>
+            <td class="text-center">
+              <input type="checkbox" name="delete_{{ loop.index0 }}"> 削除
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
     <input type="hidden" name="total_rows" value="{{ items|length }}">
 
-    <div class="my-4">
-        <h4>新しい商品を追加</h4>
-        <div class="row mb-2">
-            <div class="col-md-3"><input type="text" class="form-control" name="add_name" placeholder="名前"></div>
-            <div class="col-md-3"><input type="text" class="form-control" name="add_card_id" placeholder="カードID"></div>
-            <div class="col-md-3"><input type="text" class="form-control" name="add_rare" placeholder="レアリティ"></div>
-            <div class="col-md-2"><input type="number" class="form-control" name="add_stock" placeholder="在庫数" min="0"></div>
-        </div>
+    <!-- 🔽 下部ボタン -->
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-success me-2">保存</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">戻る</a>
     </div>
+  </form>
+</div>
 
-    <button type="submit" class="btn btn-success">保存</button>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">戻る</a>
-</form>
+<!-- 🔝 トップへ戻るボタン -->
+<button onclick="scrollToTop()" id="topBtn" title="ページトップへ">↑</button>
+
+<style>
+  #topBtn {
+    position: fixed;
+    bottom: 30px;
+    right: 20px;
+    z-index: 100;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  #topBtn:hover {
+    background-color: #0b5ed7;
+  }
+</style>
+
+<script>
+  window.onscroll = function () {
+    document.getElementById("topBtn").style.display = window.scrollY > 300 ? "block" : "none";
+  };
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
 {% endblock %}

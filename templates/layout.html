@@ -11,12 +11,6 @@
             padding-top: 20px;
             font-family: 'Roboto', sans-serif;
         }
-        .filter-form {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
         .table th, .table td {
             text-align: center;
             vertical-align: middle;
@@ -28,13 +22,7 @@
             margin-top: 20px;
             flex-wrap: wrap;
         }
-        .pagination a, .pagination strong {
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .pagination .active {
+        .pagination .active a {
             background-color: #0275d8;
             color: white;
             border-color: #0275d8;
@@ -47,14 +35,21 @@
 </head>
 <body>
     <div class="container">
-        <div class="d-flex justify-content-end">
-            {% if logged_in %}
-                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">ログアウト</a>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-outline-primary">ログイン</a>
-            {% endif %}
+
+        <!-- 上部メニュー -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h4 text-center">遊戯王カード在庫管理</h1>
+            <div>
+                {% if logged_in %}
+                    <a href="{{ url_for('edit') }}" class="btn btn-outline-secondary me-2">編集</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">ログアウト</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary">ログイン</a>
+                {% endif %}
+            </div>
         </div>
         <hr>
+
         {% block content %}{% endblock %}
     </div>
 

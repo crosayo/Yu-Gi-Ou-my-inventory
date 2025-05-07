@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session
 import psycopg2
 import psycopg2.extras
 import os
@@ -10,7 +10,6 @@ app.secret_key = 'your_secret_key_here'
 
 # PostgreSQL 接続設定
 DB_URL = os.getenv("DATABASE_URL", "postgresql://yu_gi_oh_inventory_db_user:SulMEphNxN6FviTKMTRUm569rS7KVuHG@dpg-d0dkoqidbo4c738lkh6g-a.singapore-postgres.render.com/yu_gi_oh_inventory_db")
-
 USER_FILE = 'users.json'
 
 # ログイン保護デコレータ
@@ -30,15 +29,25 @@ def check_login(username, password):
         users = json.load(f)
     return users.get(username) == password
 
-# データベース接続関数
+# データベース接続
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=psycopg2.extras.DictCursor)
 
-# アイテム一覧取得
+# アイテム取得
 def get_items(show_zero=True, keyword=None, sort_by="name", sort_order="asc"):
+    valid_sort_keys = ["name", "card_id", "rare", "stock"]
+    valid_sort_orders = ["asc", "desc"]
+
+    if sort_by not in valid_sort_keys:
+        sort_by = "name"
+    if sort_order not in valid_sort_orders:
+        sort_order = "asc"
+
     conn = get_db_connection()
     cur = conn.cursor()
-    query = "SELECT * FROM items WHERE 1=1"
+
+    # ✅ ここを変更：「defaultカテゴリの商品のみ」
+    query = "SELECT * FROM items WHERE category = 'default'"
     params = []
 
     if not show_zero:
@@ -48,13 +57,14 @@ def get_items(show_zero=True, keyword=None, sort_by="name", sort_order="asc"):
         k = f"%{keyword.lower()}%"
         params.extend([k, k, k])
 
-    query += f" ORDER BY {sort_by} {'DESC' if sort_order == 'desc' else 'ASC'}"
+    query += f" ORDER BY {sort_by} {sort_order.upper()}"
     cur.execute(query, params)
     items = cur.fetchall()
     conn.close()
     return items
 
-# アイテム保存（更新）
+
+# アイテム更新
 def update_items(items):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -78,13 +88,14 @@ def add_item(name, card_id, rare, stock):
     conn.commit()
     conn.close()
 
+# メイン画面
 @app.route('/')
 def index():
     per_page = int(request.args.get('per_page', 10))
     page = int(request.args.get('page', 1))
     show_zero = request.args.get('show_zero') == 'on'
     keyword = request.args.get('keyword', '')
-    sort_by = request.args.get('sort_by', 'name')
+    sort_by = request.args.get('sort_key', 'name')
     sort_order = request.args.get('sort_order', 'asc')
 
     all_items = get_items(show_zero=show_zero, keyword=keyword, sort_by=sort_by, sort_order=sort_order)
@@ -93,17 +104,18 @@ def index():
     end = start + per_page
     items = all_items[start:end]
 
-    page_range_start = max(1, page - 2)
-    page_range_end = min(page + 3, (total + per_page - 1) // per_page + 1)
-
-    return render_template('index.html', items=items, per_page=per_page, page=page,
+    return render_template('index.html',
+                           items=items,
+                           per_page=per_page,
+                           page=page,
                            total_pages=(total + per_page - 1) // per_page,
-                           page_range_start=page_range_start,
-                           page_range_end=page_range_end,
-                           show_zero=show_zero, keyword=keyword,
-                           sort_by=sort_by, sort_order=sort_order,
+                           show_zero=show_zero,
+                           keyword=keyword,
+                           sort_key=sort_by,
+                           sort_order=sort_order,
                            logged_in=session.get('logged_in'))
 
+# 編集画面
 @app.route('/edit', methods=['GET', 'POST'])
 @login_required
 def edit():
@@ -138,11 +150,15 @@ def edit():
             })
 
         update_items(items)
-        return redirect(url_for('index'))
+        return redirect(url_for('edit'))
 
-    items = get_items()
-    return render_template('edit.html', items=items, filename='DB')
+    # 🔍 GET: キーワード検索を反映
+    keyword = request.args.get('keyword', '')
+    items = get_items(keyword=keyword)
+    return render_template('edit.html', items=items, keyword=keyword, filename='DB')
 
+
+# ログイン
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -152,10 +168,43 @@ def login():
         return render_template('login.html', error='ログイン失敗')
     return render_template('login.html')
 
+# ログアウト
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
+@app.route('/delete/<card_id>')
+@login_required
+def delete(card_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM items WHERE card_id = %s", (card_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
+# 初期データ（開発用）
+def seed_initial_data():
+    sample_items = [
+        {"name": "青眼の白龍", "card_id": "AC01-JP000", "rare": "Ultra", "stock": 3},
+        {"name": "ブラック・マジシャン", "card_id": "DP16-JP001", "rare": "Super", "stock": 2},
+        {"name": "サイバー・ドラゴン", "card_id": "SD38-JP001", "rare": "Normal", "stock": 1},
+    ]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM items")
+    count = cur.fetchone()[0]
+    if count == 0:
+        for item in sample_items:
+            cur.execute("""
+                INSERT INTO items (name, card_id, rare, stock, category)
+                VALUES (%s, %s, %s, %s, 'default')
+            """, (item["name"], item["card_id"], item["rare"], item["stock"]))
+        conn.commit()
+        print("✅ 初期データの登録が完了しました")
+    conn.close()
+
+seed_initial_data()
 
 if __name__ == '__main__':
     app.run(debug=True)
