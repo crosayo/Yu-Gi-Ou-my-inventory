@@ -54,7 +54,7 @@ def get_items(show_zero=True, keyword=None, sort_by="name", sort_order="asc"):
     conn.close()
     return items
 
-# アイテム保存（編集画面で全削除→再追加）
+# アイテム保存（更新）
 def update_items(items):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -67,7 +67,7 @@ def update_items(items):
     conn.commit()
     conn.close()
 
-# 単品追加（index下部）
+# アイテム追加
 def add_item(name, card_id, rare, stock):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -98,27 +98,11 @@ def index():
 
     return render_template('index.html', items=items, per_page=per_page, page=page,
                            total_pages=(total + per_page - 1) // per_page,
-                           page_range_start=page_range_start, page_range_end=page_range_end,
+                           page_range_start=page_range_start,
+                           page_range_end=page_range_end,
                            show_zero=show_zero, keyword=keyword,
                            sort_by=sort_by, sort_order=sort_order,
                            logged_in=session.get('logged_in'))
-
-@app.route('/add', methods=['POST'])
-@login_required
-def add():
-    name = request.form.get('name', '').strip()
-    card_id = request.form.get('card_id', '').strip()
-    rare = request.form.get('rare', '').strip()
-    stock = request.form.get('stock', '0').strip()
-
-    if name and card_id:
-        try:
-            stock = int(stock)
-        except ValueError:
-            stock = 0
-        add_item(name, card_id, rare, stock)
-
-    return redirect(url_for('index'))
 
 @app.route('/edit', methods=['GET', 'POST'])
 @login_required
