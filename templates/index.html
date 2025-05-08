@@ -85,10 +85,24 @@
         <td>{{ item.name }}</td>
         <td>{{ item.card_id }}</td>
         <td>{{ item.rare }}</td>
-        <td>{{ item.stock }}</td>
         <td>
-          <a href="{{ url_for('edit_item', card_id=item.card_id) }}" class="btn btn-sm btn-primary">編集</a>
-          <a href="{{ url_for('confirm_delete', card_id=item.card_id) }}" class="btn btn-sm btn-danger">削除</a>
+          <div class="d-flex align-items-center justify-content-center">
+            <span class="me-2">{{ item.stock }}</span>
+            {% if logged_in %}
+            <form method="post" action="{{ url_for('update_stock', item_id=item.id) }}" class="d-inline">
+              <input type="hidden" name="delta" value="1">
+              <button type="submit" class="btn btn-sm btn-outline-success">＋</button>
+            </form>
+            <form method="post" action="{{ url_for('update_stock', item_id=item.id) }}" class="d-inline ms-1">
+              <input type="hidden" name="delta" value="-1">
+              <button type="submit" class="btn btn-sm btn-outline-danger">－</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+        <td>
+          <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-sm btn-primary">編集</a>
+          <a href="{{ url_for('confirm_delete', item_id=item.id) }}" class="btn btn-sm btn-danger">削除</a>
         </td>
       </tr>
       {% endfor %}

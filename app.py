@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 import psycopg2
 import psycopg2.extras
 import os
@@ -11,7 +11,7 @@ app.secret_key = 'your_secret_key_here'
 DB_URL = os.getenv("DATABASE_URL", "postgresql://yu_gi_oh_inventory_db_user:SulMEphNxN6FviTKMTRUm569rS7KVuHG@dpg-d0dkoqidbo4c738lkh6g-a.singapore-postgres.render.com/yu_gi_oh_inventory_db")
 USER_FILE = 'users.json'
 
-# --- Utility ---
+# --- Utility Functions ---
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=psycopg2.extras.DictCursor)
 
@@ -55,10 +55,17 @@ def index():
         has_exact_card_id = card_id_in_results(items, keyword)
         show_add_hint = not has_exact_card_id
 
-    return render_template('index.html', items=paginated, per_page=per_page, page=page,
-                           total_pages=(total + per_page - 1) // per_page, show_zero=show_zero,
-                           keyword=keyword, sort_key=sort_by, sort_order=sort_order,
-                           show_add_hint=show_add_hint, logged_in=session.get('logged_in'))
+    return render_template('index.html',
+                           items=paginated,
+                           per_page=per_page,
+                           page=page,
+                           total_pages=(total + per_page - 1) // per_page,
+                           show_zero=show_zero,
+                           keyword=keyword,
+                           sort_key=sort_by,
+                           sort_order=sort_order,
+                           show_add_hint=show_add_hint,
+                           logged_in=session.get('logged_in'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -74,9 +81,9 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-@app.route('/edit_item/<card_id>', methods=['GET', 'POST'])
+@app.route('/edit_item/<int:item_id>', methods=['GET', 'POST'])
 @login_required
-def edit_item(card_id):
+def edit_item(item_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -87,17 +94,21 @@ def edit_item(card_id):
         stock = int(stock) if stock.isdigit() else 0
 
         cur.execute("""
-            UPDATE items SET name = %s, rare = %s, stock = %s WHERE card_id = %s
-        """, (name, rare, stock, card_id))
+            UPDATE items
+               SET name = %s,
+                   rare = %s,
+                   stock = %s
+             WHERE id = %s
+        """, (name, rare, stock, item_id))
         conn.commit()
         conn.close()
         return redirect(url_for('index'))
 
-    cur.execute("SELECT * FROM items WHERE card_id = %s", (card_id,))
+    cur.execute("SELECT * FROM items WHERE id = %s", (item_id,))
     item = cur.fetchone()
     conn.close()
     if not item:
-        return "商品が見つかりませんでした", 404
+        abort(404, "商品が見つかりませんでした")
     return render_template('edit_item.html', item=item)
 
 @app.route('/add_item', methods=['GET', 'POST'])
@@ -118,35 +129,51 @@ def add_item_page():
         """, (name, card_id, rare, stock))
         conn.commit()
         conn.close()
-
         return redirect(url_for('index'))
 
     name_prefill = request.args.get('name', '')
     return render_template('add_item.html', prefill_name=name_prefill)
 
-@app.route('/confirm_delete/<card_id>')
+@app.route('/confirm_delete/<int:item_id>')
 @login_required
-def confirm_delete(card_id):
+def confirm_delete(item_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM items WHERE card_id = %s", (card_id,))
+    cur.execute("SELECT * FROM items WHERE id = %s", (item_id,))
     item = cur.fetchone()
     conn.close()
     if not item:
-        return "商品が見つかりません", 404
+        abort(404, "商品が見つかりません")
     return render_template('confirm_delete.html', item=item)
 
-@app.route('/delete/<card_id>', methods=['POST'])
+@app.route('/delete/<int:item_id>', methods=['POST'])
 @login_required
-def delete(card_id):
+def delete(item_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM items WHERE card_id = %s", (card_id,))
+    cur.execute("DELETE FROM items WHERE id = %s", (item_id,))
     conn.commit()
     conn.close()
     return redirect(url_for('index'))
 
-# --- DB操作 ---
+@app.route('/update_stock/<int:item_id>', methods=['POST'])
+@login_required
+def update_stock(item_id):
+    delta = request.form.get('delta', type=int)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT stock FROM items WHERE id = %s", (item_id,))
+    result = cur.fetchone()
+    if not result:
+        conn.close()
+        abort(404)
+    new_stock = max(0, result['stock'] + (delta or 0))
+    cur.execute("UPDATE items SET stock = %s WHERE id = %s", (new_stock, item_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
+# --- Database operations ---
 def get_items(show_zero=True, keyword=None, sort_by="name", sort_order="asc"):
     valid_sort_keys = ["name", "card_id", "rare", "stock"]
     if sort_by not in valid_sort_keys:
@@ -172,7 +199,7 @@ def get_items(show_zero=True, keyword=None, sort_by="name", sort_order="asc"):
     conn.close()
     return items
 
-# --- 初期データ登録（任意） ---
+# --- Seed initial data (development only) ---
 def seed_initial_data():
     sample_items = [
         {"name": "青眼の白龍", "card_id": "AC01-JP000", "rare": "Ultra", "stock": 3},
