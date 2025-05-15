@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">管理機能：CSVファイルからカード情報をインポート</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">CSVファイルの形式について</h4>
+        <ul>
+            <li>ヘッダー行が必須です。列名は <code>name</code>, <code>card_id</code>, <code>rare</code> を含んでいる必要があります。<code>stock</code> 列は任意です。</li>
+            <li>文字コードはUTF-8 (BOM付き推奨) を想定しています。</li>
+            <li>ファイル名 (拡張子を除く) が「カテゴリー」として登録されます。</li>
+            <li><strong>在庫数の扱い:</strong>
+                <ul>
+                    <li>CSVファイルに <code>stock</code> 列がない、または値が空の場合、在庫数は <code>0</code> として扱われます (新規登録時)。</li>
+                    <li>既にデータベースに存在するカード (同じカードID) の場合、<strong>データベース内の在庫数が維持されます</strong>。CSVファイル内の在庫数は無視されます。</li>
+                    <li>新しくデータベースに登録されるカードの場合、CSVファイル内の在庫数が使用されます (指定がなければ <code>0</code>)。</li>
+                </ul>
+            </li>
+            <li>レアリティは、システム内の定義に基づいて自動的に統一・変換されます。</li>
+        </ul>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            CSVファイルアップロード
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_import_csv') }}">
+                <div class="mb-3">
+                    <label for="csv_files" class="form-label">CSVファイルを選択 (複数選択可):</label>
+                    <input class="form-control" type="file" id="csv_files" name="csv_files" multiple accept=".csv">
+                </div>
+                <button type="submit" class="btn btn-primary">選択したCSVファイルをインポート</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">メインページに戻る</a>
+        <a href="{{ url_for('admin_unify_rarities') }}" class="btn btn-outline-info ms-2">DBレアリティ統一ページへ</a>
+    </div>
+
+</div>
+{% endblock %}
