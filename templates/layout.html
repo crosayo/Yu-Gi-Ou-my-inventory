@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>遊戯王カード在庫管理</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            padding-top: 20px;
-            font-family: 'Roboto', sans-serif; /* フォント指定 */
-            background-color: #f8f9fa; /* 背景色を少し明るく */
+            padding-top: 1rem; 
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa; 
+            padding-bottom: 3rem; 
         }
         .container {
-            background-color: #ffffff; /* コンテンツエリアの背景を白に */
+            max-width: 1140px; 
+            background-color: #ffffff; 
             padding: 20px;
-            border-radius: 8px; /* 角を丸く */
-            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* 軽い影を追加 */
+            border-radius: 8px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); 
+            margin-top: 1rem;
         }
         .table th, .table td {
             text-align: center;
@@ -25,58 +28,86 @@
         .pagination {
             display: flex;
             justify-content: center;
-            gap: 5px; /* ページネーション間の隙間 */
-            margin-top: 20px;
-            flex-wrap: wrap; /* スマホ表示で折り返すように */
+            gap: 0.3rem; 
+            margin-top: 1.5rem; 
+            flex-wrap: wrap;
         }
-        .pagination .page-item .page-link { /* ページネーションのスタイル調整 */
+        .pagination .page-item .page-link {
             border-radius: 0.25rem;
+            padding: 0.375rem 0.75rem; 
         }
-        .pagination .active .page-link { /* アクティブなページのスタイル */
-            background-color: #0d6efd; /* BootstrapのPrimaryカラー */
+        .pagination .page-item.active .page-link { 
+            background-color: #0d6efd;
             color: white;
             border-color: #0d6efd;
         }
-        .pagination .disabled .page-link { /* 無効なページのスタイル */
-            color: #6c757d; /* BootstrapのSecondaryカラー */
+        .pagination .page-item.disabled .page-link { 
+            color: #6c757d;
             pointer-events: none;
+            background-color: #e9ecef; 
+            border-color: #dee2e6;
         }
-        .btn-outline-info { /* CSVバックアップボタンのスタイル */
-            color: #0dcaf0;
-            border-color: #0dcaf0;
-        }
-        .btn-outline-info:hover {
-            color: #fff;
-            background-color: #0dcaf0;
-            border-color: #0dcaf0;
-        }
-        .header-controls { /* ヘッダーのボタングループを右寄せにするためのコンテナ */
+        .header-controls {
             display: flex;
-            gap: 0.5rem; /* ボタン間の隙間 */
+            gap: 0.5rem; 
+        }
+        .admin-menu-container {
+            background-color: #e9ecef;
+            padding: 0.75rem 1rem;
+            border-radius: 0.3rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #dee2e6;
+        }
+        .admin-menu-container .admin-menu-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .admin-menu-container .btn {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem; 
+        }
+        .footer {
+            padding: 1rem 0;
+            margin-top: 2rem;
+            font-size: 0.9em;
+            text-align: center;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container pb-4">
 
-        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-            <h1 class="h4 mb-0">遊戯王カード在庫管理</h1>
-            <div class="header-controls"> {# ボタングループをまとめる div #}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <h1 class="h4 mb-3 mb-md-0 text-center text-md-start">遊戯王カード在庫管理</h1>
+            <div class="header-controls">
                 {% if logged_in %}
-                    <a href="{{ url_for('add_item_page') }}" class="btn btn-sm btn-outline-success">新規登録</a>
-                    <a href="{{ url_for('download_csv') }}" class="btn btn-sm btn-outline-info">CSVバックアップ</a> {# CSVバックアップボタン #}
-                    <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger">ログアウト</a>
+                    <a href="{{ url_for('add_item_page') }}" class="btn btn-sm btn-success">新規登録</a>
+                    <a href="{{ url_for('download_csv') }}" class="btn btn-sm btn-info">CSVバックアップ</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">ログアウト</a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-primary">ログイン</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-sm btn-primary">ログイン</a>
                 {% endif %}
             </div>
         </div>
-        <hr class="mt-0 mb-4"> {# 上部メニュー下の線、位置調整 #}
+        
+        {% if logged_in %}
+        <div class="admin-menu-container">
+            <span class="admin-menu-title">管理者メニュー</span>
+            <div class="d-flex flex-wrap justify-content-center justify-content-md-start">
+                <a href="{{ url_for('admin_unify_rarities') }}" class="btn btn-sm btn-warning">DBレアリティ統一</a>
+                <a href="{{ url_for('admin_import_csv') }}" class="btn btn-sm btn-info">CSVインポート</a>
+                <a href="{{ url_for('admin_batch_register') }}" class="btn btn-sm btn-primary">一括カード登録</a> {# 追加 #}
+            </div>
+        </div>
+        {% endif %}
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -87,52 +118,13 @@
         {% block content %}{% endblock %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; {{ now.year }} 遊戯王カード在庫管理. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
-```
-
-**主な変更点と解説**
-
-**`app.py`**
-
-* **必要なモジュールのインポート**:
-    * `io`: メモリ内でテキストストリームを扱うために使用します。
-    * `csv`: CSVファイルの書き出し処理に使用します。
-    * `make_response`: Flaskでカスタムレスポンス（今回はファイルダウンロード）を生成するために使用します。
-    * `datetime`: ダウンロードするファイル名に現在の日時を付加し、一意性を高めるために使用します。
-* **`/download_csv` ルートの追加**:
-    * `@login_required` デコレータにより、ログインユーザーのみがアクセスできるようにしています。
-    * データベースから `items` テーブルの全データを取得します (`SELECT id, name, card_id, rare, stock, category FROM items ORDER BY id`)。
-    * `io.StringIO()` を使ってメモリ上にCSVデータを作成します。
-        * `si.write('\ufeff')` を追加し、CSVファイルの先頭にUTF-8 BOM (Byte Order Mark) を書き込んでいます。これにより、Microsoft Excelでファイルを開いた際の日本語の文字化けを防ぐ効果が期待できます。
-    * `csv.writer()` を使って、まずヘッダー行（'ID', '名前', 'カードID', 'レアリティ', '在庫数', 'カテゴリ'）を書き込み、次にデータベースから取得した各カードの情報を書き込みます。
-    * `make_response()` でレスポンスオブジェクトを作成します。
-    * レスポンスヘッダーの `Content-Disposition` に `attachment; filename=...` を設定することで、ブラウザがこのレスポンスをファイルとしてダウンロードするように促します。ファイル名には日時を含めています (例: `yugioh_inventory_backup_20230515_103000.csv`)。
-    * レスポンスヘッダーの `Content-type` に `text/csv; charset=utf-8` を設定し、CSVファイルであることと、文字エンコーディングがUTF-8であることを明示しています。
-* **既存コードの軽微な修正**:
-    * `index`ルート: `total_pages` の計算で `per_page` が0の場合のゼロ除算エラーを防ぐように修正しました。`card_id_in_results` のチェック対象を `paginated_items` に変更しました（全件チェックだと意図しない可能性があるため）。
-    * `add_item_page`ルート: 簡単なサーバーサイドバリデーション（名前とカードIDが空でないか）と、データベースエラー発生時のロールバックおよびエラー通知の例を追加しました。
-    * `update_stock`ルート: `delta`が取得できない場合の処理と、操作後に元のページに戻るように `redirect(request.referrer)` を使用するよう変更しました。
-    * `get_items`ルート: `id`もソートキーとして選択できるようにしました。キーワード検索で `LOWER()` を使用し、大文字・小文字を区別しないようにしました。
-    * `seed_initial_data`関数: `category`カラムも考慮するように修正しました。
-
-**`layout.html`**
-
-* **CSVバックアップボタンの追加**:
-    * ログインしている場合に表示されるメニュー（「新規登録」ボタンや「ログアウト」ボタンがある箇所）に、「CSVバックアップ」というテキストのボタンを追加しました。
-    * このボタンは `btn-outline-info` というBootstrapのクラスで見栄えを調整しています。
-    * リンク先は `{{ url_for('download_csv') }}` となっており、`app.py`で定義した `/download_csv` ルートに対応します。
-* **軽微なスタイル調整**:
-    * 全体の背景色、コンテンツエリアのスタイル、フォント、ヘッダーのボタングループの配置などを少し調整して見栄えを改善しました。
-    * `get_flashed_messages` を使って、Flaskのflashメッセージ（例えばエラー通知など）を表示できるブロックを追加しました。
-
-**ご利用方法**
-
-1.  上記のコードで `app.py` と `layout.html` をそれぞれ更新してください。
-2.  アプリケーションを起動（または再起動）します。
-3.  ログイン後、画面上部に「CSVバックアップ」ボタンが表示されるようになります。
-4.  このボタンをクリックすると、`yugioh_inventory_backup_YYYYMMDD_HHMMSS.csv` という形式のファイル名で、カードリストのCSVファイルがダウンロードされます。
-
-これで、いつでもデータベースのカード情報をCSVファイルとして手元にバックアップできるようになります。
-何かご不明な点や、さらに調整したい箇所があればお気軽にお知らせくだ

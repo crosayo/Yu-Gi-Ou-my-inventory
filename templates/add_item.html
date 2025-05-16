@@ -4,9 +4,22 @@
 <div class="container mt-4" style="max-width: 500px;">
   <h2 class="text-center mb-4">新しい商品を登録</h2>
 
+  {# flashメッセージ表示エリアはlayout.htmlに集約されているので、ここでは不要な場合が多い #}
+  {# もしこのページ専用のメッセージ表示が必要な場合は残す #}
+  {# {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %} #}
+
   <form method="post">
     <div class="mb-3">
-      <label for="name" class="form-label">名前</label>
+      <label for="name" class="form-label">名前 <span class="text-danger">*</span></label>
       <input
         type="text"
         id="name"
@@ -18,24 +31,46 @@
     </div>
 
     <div class="mb-3">
-      <label for="card_id" class="form-label">カードID</label>
+      <label for="card_id" class="form-label">カードID (型番)</label>
       <input
         type="text"
         id="card_id"
         name="card_id"
         class="form-control"
-        placeholder="例：AC01-JP000"
-        required>
+        value="{{ prefill_card_id or '' }}"
+        placeholder="例：AC01-JP000 (空欄可)">
     </div>
 
     <div class="mb-3">
-      <label for="rare" class="form-label">レアリティ</label>
+      <label for="rare_select" class="form-label">レアリティ <span class="text-danger">*</span></label>
+      <select name="rare_select" id="rare_select" class="form-select" required>
+        <option value="">選択してください</option>
+        {% for r in rarities %}
+        <option value="{{ r }}" {% if r == selected_rarity %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="mb-3" id="rare_custom_div" style="display: {% if selected_rarity == 'その他' %}block{% else %}none{% endif %};">
+      <label for="rare_custom" class="form-label">レアリティ（その他）</label>
+      <input 
+        type="text" 
+        id="rare_custom" 
+        name="rare_custom" 
+        class="form-control" 
+        placeholder="例：エラーカード"
+        value="{{ custom_rarity_value or '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="category" class="form-label">カテゴリー（収録パックなど）</label>
       <input
         type="text"
-        id="rare"
-        name="rare"
+        id="category"
+        name="category"
         class="form-control"
-        placeholder="例：Ultra">
+        value="{{ prefill_category or '' }}"
+        placeholder="例：ヒストリーアーカイブコレクション">
     </div>
 
     <div class="mb-3">
@@ -45,14 +80,41 @@
         id="stock"
         name="stock"
         class="form-control"
-        value="0"
-        min="0">
+        value="{{ prefill_stock or 0 }}"
+        min="0"
+        placeholder="例：3">
     </div>
 
     <div class="d-grid gap-2">
-      <button type="submit" class="btn btn-success">登録</button>
+      <button type="submit" class="btn btn-primary">登録</button>
       <a href="{{ url_for('index') }}" class="btn btn-secondary">キャンセル</a>
     </div>
   </form>
 </div>
+
+<script>
+  // レアリティ選択で「その他」が選ばれたら自由記述欄を表示・入力必須制御
+  const rareSelect = document.getElementById('rare_select');
+  const rareCustomDiv = document.getElementById('rare_custom_div');
+  const rareCustomInput = document.getElementById('rare_custom');
+
+  function toggleCustomRare() {
+    if (rareSelect.value === 'その他') {
+      rareCustomDiv.style.display = 'block';
+      rareCustomInput.required = true;
+    } else {
+      rareCustomDiv.style.display = 'none';
+      rareCustomInput.required = false;
+      rareCustomInput.value = ''; // 他の選択肢を選んだらクリア
+    }
+  }
+
+  rareSelect.addEventListener('change', toggleCustomRare);
+  
+  // 初期表示時にもチェック (フォーム送信失敗で戻ってきた場合や、編集画面での初期値設定のため)
+  // DOMContentLoaded を使って、HTMLの読み込み完了後に実行する
+  document.addEventListener('DOMContentLoaded', function() {
+    toggleCustomRare(); // 初期表示のために呼び出し
+  });
+</script>
 {% endblock %}

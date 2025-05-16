@@ -4,9 +4,11 @@
 <div class="container mt-4" style="max-width: 500px;">
   <h2 class="text-center mb-4">商品編集</h2>
 
+  {# flashメッセージ表示エリアはlayout.htmlに集約 #}
+
   <form method="post">
     <div class="mb-3">
-      <label for="name" class="form-label">名前</label>
+      <label for="name" class="form-label">名前 <span class="text-danger">*</span></label>
       <input
         type="text"
         id="name"
@@ -16,23 +18,56 @@
         required>
     </div>
     <div class="mb-3">
-      <label for="card_id" class="form-label">カードID</label>
+      <label for="card_id_display" class="form-label">カードID (型番)</label> {# 表示専用、編集不可 #}
       <input
         type="text"
-        id="card_id"
+        id="card_id_display"
         class="form-control"
-        value="{{ item.card_id }}"
-        disabled>
+        value="{{ item.card_id or '(空欄)' }}"
+        disabled readonly>
+      {# 実際のcard_idはPOSTで送信しないので、サーバー側でitem_idから取得する #}
     </div>
+
+    {# レアリティ選択 (add_item.html と同様の形式) #}
     <div class="mb-3">
-      <label for="rare" class="form-label">レアリティ</label>
+      <label for="rare_select" class="form-label">レアリティ <span class="text-danger">*</span></label>
+      <select name="rare_select" id="rare_select" class="form-select" required>
+        <option value="">選択してください</option>
+        {% set current_rare_is_defined = item.rare in rarities %}
+        {% for r in rarities %}
+        <option value="{{ r }}" 
+                {% if r == item.rare %}selected
+                {% elif not current_rare_is_defined and item.rare and r == 'その他' %}selected {# DBの値がリストになく、かつitem.rareが存在する場合に「その他」を選択 #}
+                {% endif %}>
+          {{ r }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3" id="rare_custom_div" 
+         style="display: {% if (item.rare not in rarities and item.rare) or item.rare == 'その他' %}block{% else %}none{% endif %};">
+      <label for="rare_custom" class="form-label">レアリティ（その他）</label>
+      <input 
+        type="text" 
+        id="rare_custom" 
+        name="rare_custom" 
+        class="form-control" 
+        placeholder="例：エラーカード"
+        value="{% if item.rare not in rarities and item.rare %}{{ item.rare }}{% endif %}"> {# item.rareがリストになく、かつ空でない場合に表示 #}
+    </div>
+
+    <div class="mb-3">
+      <label for="category" class="form-label">カテゴリー（収録パックなど）</label>
       <input
         type="text"
-        id="rare"
-        name="rare"
+        id="category"
+        name="category"
         class="form-control"
-        value="{{ item.rare }}">
+        value="{{ item.category or '' }}"
+        placeholder="例：ヒストリーアーカイブコレクション">
     </div>
+
     <div class="mb-3">
       <label for="stock" class="form-label">在庫数</label>
       <input
@@ -41,13 +76,46 @@
         name="stock"
         class="form-control"
         value="{{ item.stock }}"
-        min="0">
+        min="0"
+        required>
     </div>
-
     <div class="d-grid gap-2">
-      <button type="submit" class="btn btn-success">保存</button>
-      <a href="{{ url_for('index') }}" class="btn btn-secondary">戻る</a>
+      <button type="submit" class="btn btn-primary">更新</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">キャンセル</a>
     </div>
   </form>
 </div>
+
+<script>
+  // レアリティ選択で「その他」が選ばれたら自由記述欄を表示・入力必須制御
+  const rareSelectEdit = document.getElementById('rare_select');
+  const rareCustomDivEdit = document.getElementById('rare_custom_div');
+  const rareCustomInputEdit = document.getElementById('rare_custom');
+
+  function toggleCustomRareEdit() {
+    if (rareSelectEdit.value === 'その他') {
+      rareCustomDivEdit.style.display = 'block';
+      rareCustomInputEdit.required = true;
+    } else {
+      rareCustomDivEdit.style.display = 'none';
+      rareCustomInputEdit.required = false;
+      // 編集時は、他の選択肢を選んでもカスタム入力欄の値をクリアしない方が良い場合もある
+      // rareCustomInputEdit.value = ''; 
+    }
+  }
+
+  rareSelectEdit.addEventListener('change', toggleCustomRareEdit);
+  
+  document.addEventListener('DOMContentLoaded', function() {
+      const currentRareValue = "{{ item.rare or '' }}"; // item.rareがNoneの場合も考慮
+      const raritiesArray = {{ rarities | tojson | safe }};
+      
+      // 初期値が定義済みリストになく、かつ空でない場合、「その他」を選択しカスタム欄に値を設定
+      if (currentRareValue && !raritiesArray.includes(currentRareValue)) {
+          rareSelectEdit.value = 'その他';
+          rareCustomInputEdit.value = currentRareValue;
+      }
+      toggleCustomRareEdit(); // 初期表示のために呼び出し
+  });
+</script>
 {% endblock %}
